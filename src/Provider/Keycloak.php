@@ -75,6 +75,7 @@ class Keycloak extends AbstractProvider
      * @param  string|array|null $response
      *
      * @return string|array|null
+     * @throws EncryptionConfigurationException
      */
     public function decryptResponse($response)
     {
@@ -105,7 +106,7 @@ class Keycloak extends AbstractProvider
      */
     public function getBaseAuthorizationUrl()
     {
-        return $this->getBaseUrlWithRealm().'/protocol/openid-connect/auth';
+        return $this->getBaseUrlWithRealm() . '/protocol/openid-connect/auth';
     }
 
     /**
@@ -117,7 +118,7 @@ class Keycloak extends AbstractProvider
      */
     public function getBaseAccessTokenUrl(array $params)
     {
-        return $this->getBaseUrlWithRealm().'/protocol/openid-connect/token';
+        return $this->getBaseUrlWithRealm() . '/protocol/openid-connect/token';
     }
 
     /**
@@ -129,7 +130,7 @@ class Keycloak extends AbstractProvider
      */
     public function getResourceOwnerDetailsUrl(AccessToken $token)
     {
-        return $this->getBaseUrlWithRealm().'/protocol/openid-connect/userinfo';
+        return $this->getBaseUrlWithRealm() . '/protocol/openid-connect/userinfo';
     }
 
     /**
@@ -168,12 +169,13 @@ class Keycloak extends AbstractProvider
         return $this->getBaseUrlWithRealm() . '/protocol/openid-connect/logout';
     }
 
-    private function fetchIntrospectToken(AccessToken $token) {
+    private function fetchIntrospectToken(AccessToken $token)
+    {
         $data = array(
             'form_params' => array(
                 "token" => $token->getToken(),
                 "client_id" => $this->clientId,
-                "client_secret" => $this->clientSecret ),
+                "client_secret" => $this->clientSecret),
             RequestOptions::SYNCHRONOUS => true
         );
 
@@ -192,7 +194,7 @@ class Keycloak extends AbstractProvider
      */
     protected function getBaseUrlWithRealm()
     {
-        return $this->authServerUrl.'/realms/'.$this->realm;
+        return $this->authServerUrl . '/realms/' . $this->realm;
     }
 
     /**
@@ -219,7 +221,7 @@ class Keycloak extends AbstractProvider
     protected function checkResponse(ResponseInterface $response, $data)
     {
         if (!empty($data['error'])) {
-            $error = $data['error'].': '.$data['error_description'];
+            $error = $data['error'] . ': ' . $data['error_description'];
             throw new IdentityProviderException($error, 0, $data);
         }
     }
@@ -241,6 +243,7 @@ class Keycloak extends AbstractProvider
      *
      * @param  AccessToken $token
      * @return KeycloakResourceOwner
+     * @throws EncryptionConfigurationException
      */
     public function getResourceOwner(AccessToken $token)
     {
@@ -256,6 +259,7 @@ class Keycloak extends AbstractProvider
      *
      * @param  AccessToken $token
      * @return KeycloakResourceOwner
+     * @throws EncryptionConfigurationException
      */
     public function getResourceOwnerFromIntrospectedToken(AccessToken $token)
     {
@@ -269,7 +273,7 @@ class Keycloak extends AbstractProvider
     /**
      * Updates expected encryption algorithm of Keycloak instance.
      *
-     * @param string  $encryptionAlgorithm
+     * @param string $encryptionAlgorithm
      *
      * @return Keycloak
      */
@@ -283,7 +287,7 @@ class Keycloak extends AbstractProvider
     /**
      * Updates expected encryption key of Keycloak instance.
      *
-     * @param string  $encryptionKey
+     * @param string $encryptionKey
      *
      * @return Keycloak
      */
@@ -298,7 +302,7 @@ class Keycloak extends AbstractProvider
      * Updates expected encryption key of Keycloak instance to content of given
      * file path.
      *
-     * @param string  $encryptionKeyPath
+     * @param string $encryptionKeyPath
      *
      * @return Keycloak
      */
@@ -320,6 +324,24 @@ class Keycloak extends AbstractProvider
      */
     public function usesEncryption()
     {
-        return (bool) $this->encryptionAlgorithm && $this->encryptionKey;
+        return (bool)$this->encryptionAlgorithm && $this->encryptionKey;
+    }
+
+    /**
+     * Logout.
+     *
+     * @param $refreshToken
+     * @return mixed
+     * @throws IdentityProviderException
+     */
+    public function logout($refreshToken)
+    {
+        $logoutUrl = $this->getLogoutUrl();
+        $req = $this->getRequest('POST', $logoutUrl, array(
+            'client_id' => $this->clientId,
+            'client_secret' => $this->clientSecret,
+            'refresh_token' => $refreshToken,
+        ));
+        return $this->getParsedResponse($req);
     }
 }
