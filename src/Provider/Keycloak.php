@@ -445,12 +445,12 @@ class Keycloak extends AbstractProvider
      */
     public function logout($refreshToken)
     {
-        $logoutUrl = $this->getLogoutUrl();
-        $req = $this->getRequest('POST', $logoutUrl, array(
+        $logoutUrl = $this->getBaseLogoutUrl();
+        $req = $this->getRequest('POST', $logoutUrl, $this->getAccessTokenOptions(array(
             'client_id' => $this->clientId,
             'client_secret' => $this->clientSecret,
             'refresh_token' => $refreshToken,
-        ));
+        )));
         return $this->getParsedResponse($req);
     }
 }
