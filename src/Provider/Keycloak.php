@@ -317,6 +317,7 @@ class Keycloak extends AbstractProvider
      *
      * @param  AccessToken $token
      * @return KeycloakResourceOwner
+     * @throws EncryptionConfigurationException
      */
     public function getResourceOwnerFromIntrospectedToken(AccessToken $token)
     {
@@ -433,5 +434,23 @@ class Keycloak extends AbstractProvider
     private function validateGteVersion($version)
     {
         return (isset($this->version) && version_compare($this->version, $version, '>='));
+    }
+
+    /**
+     * Logout.
+     *
+     * @param $refreshToken
+     * @return mixed
+     * @throws IdentityProviderException
+     */
+    public function logout($refreshToken)
+    {
+        $logoutUrl = $this->getLogoutUrl();
+        $req = $this->getRequest('POST', $logoutUrl, array(
+            'client_id' => $this->clientId,
+            'client_secret' => $this->clientSecret,
+            'refresh_token' => $refreshToken,
+        ));
+        return $this->getParsedResponse($req);
     }
 }
