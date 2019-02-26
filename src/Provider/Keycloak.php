@@ -344,4 +344,26 @@ class Keycloak extends AbstractProvider
         )));
         return $this->getParsedResponse($req);
     }
+
+    /**
+     * Logout.
+     *
+     * @param $refreshToken
+     * @return AccessToken
+     * @throws IdentityProviderException
+     */
+    public function fetchNewToken($refreshToken)
+    {
+        $tokenUrl = $this->getBaseAccessTokenUrl([]);
+        $req = $this->getRequest('POST', $tokenUrl, $this->getAccessTokenOptions(array(
+            'client_id' => $this->clientId,
+            'client_secret' => $this->clientSecret,
+            'grant_type' => 'refresh_token',
+            'refresh_token' => $refreshToken,
+        )));
+        $response = $this->getParsedResponse($req);
+        $prepared = $this->prepareAccessTokenResponse($response);
+        $token    = new AccessToken($prepared);
+        return $token;
+    }
 }
